@@ -4,12 +4,14 @@ using NPOI.HPSF;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
+using System.Linq;
+using System.Collections.Generic;
 
 FileStream file;
 XSSFWorkbook wb;
 
 var buildingaddresspath = @"txt\楼宇地址.txt";
-var filepath = @"..\企业注册数据导出.xlsx";
+var filepath = @"企业注册数据导出.xlsx";
 
 Dictionary<string, string> buildingAddress = ReadBuildingAddress(buildingaddresspath);
 
@@ -38,17 +40,26 @@ file.Close();
 
 ISheet sheet = wb.GetSheetAt(0);
 string buildingadd;
+int gzindex = (sheet.GetRow(0).Cells.Where(x => x.StringCellValue == "地址").First()).ColumnIndex;
 //int LastColumnNum = sheet.GetRow(8).Cells.Count;
 for (int i = 1; i < sheet.LastRowNum; i++)
 {
-    buildingadd = GetItemRoad(sheet.GetRow(i).GetCell(9).ToString());
-    sheet.GetRow(i).CreateCell(17).SetCellValue(buildingAddress.ContainsKey(buildingadd) ? buildingAddress[buildingadd] : "");
+    //buildingadd = GetItemRoad(sheet.GetRow(i).GetCell(9).ToString());
+
+    //第9列是地址，此处可能会变
+    buildingadd = GetItemAddress(sheet.GetRow(i).GetCell(gzindex).ToString());
+    if (buildingadd != null)
+        //最后一列，此处也可能会变
+        sheet.GetRow(i).CreateCell(18).SetCellValue(buildingAddress.ContainsKey(buildingadd) ? buildingAddress[buildingadd] : "");
     //Console.WriteLine(sheet.GetRow(i).GetCell(9));
 }
 
 
-string GetItemRoad(string address)
+
+string GetItemAddress(string address)
 {
+    if (address.IndexOf("市北区") == -1)
+        return null;
     int qu = address.IndexOf("区");
     int hao = address.IndexOf("号", qu);
     return hao < qu ? "" : address.Substring(qu + 1, hao - qu).Replace(" ", "");
